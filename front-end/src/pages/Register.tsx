@@ -3,21 +3,24 @@ import Wrapper from "../assets/wrappers/RegisterPage";
 import Logo from "../components/Logo";
 import InputField from "../components/InputField";
 import Alert from "../components/Alert";
+import { useAppContext } from "../context/appContext";
 
 const userState = {
   name: '',
   email: '',
   password: '',
-  isRegistered: true,
-  showAlert: false
+  isRegistered: true
  }
 
 const Register = () => {
 
   const [user, setUser] = useState(userState);
 
+  const {isLoading, showAlert, displayAlert} = useAppContext();
+
   const handleChange = (e: FormEvent) => {
-    e.preventDefault();
+    const { name, value } = e.target as HTMLInputElement;
+    setUser({...user, [name]: value})
   }
 
   const toogleMember = () => {
@@ -26,6 +29,11 @@ const Register = () => {
 
   const handleSubmit = (e: FormEvent) => {
     e.preventDefault();
+
+    if(!user.email || !user.password || (!user.isRegistered && !user.name)){
+      displayAlert!();
+      return;
+    }
 
 
   }
@@ -37,7 +45,7 @@ const Register = () => {
       <h3>{ user.isRegistered ? 'Login' : 'Register'}</h3>
       
 
-      { user.showAlert && <Alert text='Invalid credentials'/> }
+      { showAlert && <Alert /> }
 
       { !user.isRegistered && <InputField label='Name' type='text' value={user.name} htmlFor='name' handleChange={handleChange}/> }
       
