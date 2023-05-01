@@ -1,5 +1,6 @@
 import express, { Request, Response } from 'express';
 import 'express-async-errors';
+import cors from 'cors';
 import mongoose from 'mongoose';
 import errorHandlerMiddleware from './middleware/error-handler-middleware';
 import notFoundMiddleware from './middleware/not-found-middleware';
@@ -14,6 +15,8 @@ app.use(express.json());
 app.get('/', (req: Request, res: Response) => {
   res.json({"msg": "return"});
 })
+
+app.use(cors());
 
 app.use('/api/auth', authRouter);
 app.use('/api/pigs', pigRouter);
