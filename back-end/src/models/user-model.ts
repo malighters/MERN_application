@@ -13,7 +13,7 @@ const userSchema = new mongoose.Schema<IUser, UserModel, IUserMethods>({
     unique: true
   }, 
   password: {type: String, required: [true, 'Please provide your password']},
-  fullName: {type: String, required: [true, 'Please provide your full name'], minLength: 3, maxLength: 20}, 
+  name: {type: String, required: [true, 'Please provide your full name'], minLength: 3, maxLength: 20}, 
 });
 
 userSchema.pre('save', async function () {
@@ -26,6 +26,10 @@ userSchema.methods.createJWT = function () {
   return jwt.sign({userId: this._id}, JWT_SECRET, {expiresIn: JWT_LIFETIME});
 }
 
+userSchema.methods.comparePasswords = async function (receivedPassword: string) {
+  const isMatch = await bcrypt.compare(receivedPassword, this.password);
+  return isMatch;
+}
 
 userSchema.set('toJSON', {
   transform: (document, returnedObject) => {
@@ -36,7 +40,6 @@ userSchema.set('toJSON', {
   }
 })
 
-//userSchema.methods.comparePasswords()
 
 const User = mongoose.model<IUser, UserModel>('User', userSchema);
 

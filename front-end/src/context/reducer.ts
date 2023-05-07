@@ -1,18 +1,20 @@
-import { CLEAR_ALERT, DISPLAY_ALERT } from "./actions"
+import { IUser } from "../interfaces/user-interface";
+import { CLEAR_ALERT, DISPLAY_ALERT, REGISTER_USER_BEGIN, REGISTER_USER_SUCCESS, REGISTER_USER_ERROR, LOGIN_USER_BEGIN, LOGIN_USER_SUCCESS, LOGIN_USER_ERROR } from "./actions"
 
 interface IState {
+  user: IUser | null | undefined,
+  token: string | null | undefined,
   isLoading: boolean,
   showAlert: boolean,
-  alertText: string,
+  alertText: string | null | undefined,
   alertType: string
 }
 
-interface IAction {
-  type: string
-}
+type IAction = { type: string, payload?: null} | 
+  {type: string, payload: { user: IUser, token: string, msg?: null}} |
+  {type: string, payload: {msg: string, user?: null, token?: null}};
 
-
-const reducer = (state: IState, action: IAction) => {
+const reducer = (state: IState, action: IAction): IState => {
   if (action.type === DISPLAY_ALERT) {
     return {
       ...state,
@@ -27,6 +29,57 @@ const reducer = (state: IState, action: IAction) => {
       showAlert: false,
       alertType: '',
       alertText: '',
+    };
+   }
+  if (action.type === REGISTER_USER_BEGIN) {
+    return {
+      ...state,
+      isLoading: true
+    };
+  }
+  if (action.type === REGISTER_USER_SUCCESS) {
+    return {
+      ...state,
+      isLoading:false,
+      user: action.payload?.user,
+      token: action.payload?.token,
+      showAlert: true,
+      alertType: 'success',
+      alertText: 'User created! Redirecting...',
+    };
+  }
+  if (action.type === REGISTER_USER_ERROR) {
+    return {
+      ...state,
+      showAlert: true,
+      alertType: 'danger',
+      alertText: action.payload?.msg,
+    };
+    
+  }
+  if (action.type === LOGIN_USER_BEGIN) {
+    return {
+      ...state,
+      isLoading: true
+    };
+  }
+  if (action.type === LOGIN_USER_SUCCESS) {
+    return {
+      ...state,
+      isLoading:false,
+      user: action.payload?.user,
+      token: action.payload?.token,
+      showAlert: true,
+      alertType: 'success',
+      alertText: 'Login Successful! Redirecting...',
+    };
+  }
+  if (action.type === LOGIN_USER_ERROR) {
+    return {
+      ...state,
+      showAlert: true,
+      alertType: 'danger',
+      alertText: action.payload?.msg,
     };
   }
   throw new Error(`no such action: ${action.type}`);

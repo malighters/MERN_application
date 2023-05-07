@@ -1,9 +1,10 @@
-import { FormEvent, useEffect, useState } from "react";
+import { FormEvent, useContext, useEffect ,useState } from "react";
 import Wrapper from "../assets/wrappers/RegisterPage";
 import Logo from "../components/Logo";
 import InputField from "../components/InputField";
 import Alert from "../components/Alert";
-import { useAppContext } from "../context/appContext";
+import { AppContext } from "../context/appContext";
+import { useNavigate } from "react-router-dom";
 
 const userState = {
   name: '',
@@ -14,9 +15,20 @@ const userState = {
 
 const Register = () => {
 
+  const navigate = useNavigate();
+  const userData = useContext(AppContext).user;
+
+  useEffect(() => {  
+    if(userData){
+      setTimeout(() => {
+        navigate('/');
+      }, 3000)
+    }
+  }, [userData, navigate])
+
   const [user, setUser] = useState(userState);
 
-  const {isLoading, showAlert, displayAlert} = useAppContext();
+  const { isLoading, showAlert, displayAlert, registerUser, loginUser } = useContext(AppContext);
 
   const handleChange = (e: FormEvent) => {
     const { name, value } = e.target as HTMLInputElement;
@@ -31,13 +43,24 @@ const Register = () => {
     e.preventDefault();
 
     if(!user.email || !user.password || (!user.isRegistered && !user.name)){
-      displayAlert!();
+      displayAlert?.();
       return;
     }
 
+    const currentUser = {
+      email: user.email, 
+      password: user.password,
+      name: user.name,
+    }
+
+    if(user.isRegistered) {
+      loginUser?.(currentUser);
+    }
+    else{ 
+      registerUser?.(currentUser);
+    }
 
   }
-
   return (
    <Wrapper className='full-page'>
     <form onSubmit={handleSubmit} className='form'>
@@ -53,7 +76,7 @@ const Register = () => {
       
       <InputField label='Password' type='password' value={user.password} htmlFor='password' handleChange={handleChange}/>
 
-      <button className='btn btn-block' type='submit'>Submit</button>
+      <button className='btn btn-block' type='submit' disabled={isLoading}>Submit</button>
 
       { user.isRegistered ? 'Not registered?' : 'Already a member?'}
     
