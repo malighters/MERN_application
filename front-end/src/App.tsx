@@ -1,17 +1,22 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import axios from "axios";
 import Landing from "./pages/Landing";
-import Dashboard from "./pages/Dashboard";
+import {AddPig, AllPigs, Profile,SharedLayout, Stats} from "./pages/dashboard/dashboard";
 import Error from "./pages/Error";
 import Register from "./pages/Register";
-
+import ProtectedRoute from "./pages/ProtectedRoute";
 function App() {
   axios.defaults.baseURL = `http://localhost:5000`;
   return (
   
     <BrowserRouter>
       <Routes>
-        <Route path="/" element={<Dashboard/>}/>
+        <Route path="/" element={<ProtectedRoute><SharedLayout/></ProtectedRoute>}>
+          <Route index element={<Stats />} />
+          <Route path="add-pig" element={<AddPig />} />
+          <Route path="all-pig" element={<AllPigs />} />
+          <Route path="profile" element={<Profile />} />
+        </Route>
         <Route path="/landing" element={<Landing />} />
         <Route path="/register" element={<Register/>}/>
         <Route path="*" element={<Error />}/>

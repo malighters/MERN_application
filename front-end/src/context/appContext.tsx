@@ -1,6 +1,6 @@
 import axios from "axios";
-import React, {  useReducer } from "react";
-import { CLEAR_ALERT, DISPLAY_ALERT, REGISTER_USER_BEGIN, REGISTER_USER_SUCCESS, REGISTER_USER_ERROR, LOGIN_USER_BEGIN, LOGIN_USER_SUCCESS, LOGIN_USER_ERROR } from "./actions";
+import React, {  MouseEventHandler, useReducer } from "react";
+import { CLEAR_ALERT, DISPLAY_ALERT, REGISTER_USER_BEGIN, REGISTER_USER_SUCCESS, REGISTER_USER_ERROR, LOGIN_USER_BEGIN, LOGIN_USER_SUCCESS, LOGIN_USER_ERROR, TOOGLE_SIDEBAR, LOGOUT_USER } from "./actions";
 import reducer from "./reducer";
 import { IUser } from "../interfaces/user-interface";
 
@@ -9,7 +9,8 @@ type Props = {
 }
 
 type alertFunc =  (() => void) | null
-type regFunc = | ((arg: IUser) => void) | null
+type regFunc = ((arg: IUser) => void) | null
+type buttonFunc = MouseEventHandler | undefined
 
 
 const user = localStorage.getItem('user');
@@ -22,10 +23,13 @@ interface IState {
   showAlert: boolean,
   alertText: string | null | undefined,
   alertType: string, 
+  showSidebar: boolean,
   displayAlert: alertFunc,
   clearAlert: alertFunc,
   registerUser: regFunc,
-  loginUser: regFunc
+  loginUser: regFunc,
+  logoutUser: buttonFunc,
+  toogleSidebar: buttonFunc,
 }
 
 const initialState: IState = {
@@ -35,10 +39,13 @@ const initialState: IState = {
   showAlert: false,
   alertText: '',
   alertType: '', 
+  showSidebar: true,
   displayAlert: null,
   clearAlert: null,
   registerUser: null,
-  loginUser: null
+  loginUser: null,
+  logoutUser: undefined,
+  toogleSidebar: undefined
 }
 
 export const AppContext = React.createContext(initialState);
@@ -66,15 +73,9 @@ export const AppProvider = ({children} : Props) => {
     localStorage.setItem('token', token);
   }
 
-  const removeUserFromLocalStorage = () => {
-    localStorage.removeItem('user');
-    localStorage.removeItem('token');
-  }
-
   const registerUser = async (currentUser: IUser) => {
     dispatch({type: REGISTER_USER_BEGIN});
     try {
-      console.log(currentUser)
       const responce = await axios.post('/auth/register', currentUser);
       const {user, token} = responce.data;
       dispatch({type: REGISTER_USER_SUCCESS, payload:{user, token}});
@@ -92,8 +93,7 @@ export const AppProvider = ({children} : Props) => {
   const loginUser = async (currentUser: IUser) => {
     dispatch({type: LOGIN_USER_BEGIN});
     try {
-      console.log(currentUser)
-      const responce = await axios.post('/auth/register', currentUser);
+      const responce = await axios.post('/auth/login', currentUser);
       const {user, token} = responce.data;
       dispatch({type: LOGIN_USER_SUCCESS, payload:{user, token}});
       addUserToLocalStorage({user, token});
@@ -107,8 +107,26 @@ export const AppProvider = ({children} : Props) => {
 
   initialState.loginUser = loginUser;
 
+  const removeUserFromLocalStorage = () => {
+    localStorage.removeItem('user');
+    localStorage.removeItem('token');
+  } 
+
+  const logoutUser = () => {
+    dispatch({type: LOGOUT_USER});
+    removeUserFromLocalStorage();
+  }
+
+  initialState.logoutUser = logoutUser;
+
+  const toogleSidebar = () => {
+    dispatch({type: TOOGLE_SIDEBAR});
+  }
+
+  initialState.toogleSidebar = toogleSidebar;
+
   return (
-    <AppContext.Provider value={{...state, displayAlert, clearAlert, registerUser, loginUser}}>
+    <AppContext.Provider value={{...state, displayAlert, clearAlert, registerUser, loginUser, logoutUser, toogleSidebar}}>
       {children}
     </AppContext.Provider>
   )

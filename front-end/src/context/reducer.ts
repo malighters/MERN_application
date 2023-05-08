@@ -1,5 +1,5 @@
 import { IUser } from "../interfaces/user-interface";
-import { CLEAR_ALERT, DISPLAY_ALERT, REGISTER_USER_BEGIN, REGISTER_USER_SUCCESS, REGISTER_USER_ERROR, LOGIN_USER_BEGIN, LOGIN_USER_SUCCESS, LOGIN_USER_ERROR } from "./actions"
+import { CLEAR_ALERT, DISPLAY_ALERT, REGISTER_USER_BEGIN, REGISTER_USER_SUCCESS, REGISTER_USER_ERROR, LOGIN_USER_BEGIN, LOGIN_USER_SUCCESS, LOGIN_USER_ERROR, TOOGLE_SIDEBAR, LOGOUT_USER } from "./actions"
 
 interface IState {
   user: IUser | null | undefined,
@@ -7,7 +7,8 @@ interface IState {
   isLoading: boolean,
   showAlert: boolean,
   alertText: string | null | undefined,
-  alertType: string
+  alertType: string,
+  showSidebar: boolean
 }
 
 type IAction = { type: string, payload?: null} | 
@@ -51,6 +52,7 @@ const reducer = (state: IState, action: IAction): IState => {
   if (action.type === REGISTER_USER_ERROR) {
     return {
       ...state,
+      isLoading: false,
       showAlert: true,
       alertType: 'danger',
       alertText: action.payload?.msg,
@@ -77,10 +79,21 @@ const reducer = (state: IState, action: IAction): IState => {
   if (action.type === LOGIN_USER_ERROR) {
     return {
       ...state,
+      isLoading: false,
       showAlert: true,
       alertType: 'danger',
       alertText: action.payload?.msg,
     };
+  }
+  if (action.type === LOGOUT_USER) {
+    return {
+      ...state,
+      user: null,
+      token: null
+    }
+  }
+  if (action.type === TOOGLE_SIDEBAR) {
+    return {...state, showSidebar: !state.showSidebar}
   }
   throw new Error(`no such action: ${action.type}`);
 }
