@@ -3,7 +3,7 @@ import { Request, Response, Router } from "express";
 const pigRouter = Router();
 
 pigRouter.get('/', async (req: Request, res: Response) => {
-
+  res.status(200).send('dsad');
 })
 
 pigRouter.get('/:id', async (req: Request, res: Response) => {

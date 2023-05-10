@@ -3,6 +3,7 @@ import User from "../models/user-model";
 import { IUser } from "../models/interfaces/user-interface";
 import { BadRequestError } from "../errors/bad-request-error";
 import { UnauthenticatedError } from "../errors/unauthenticated";
+import authMiddleware from "../middleware/auth-middleware";
 
 const authRouter = Router();
 
@@ -47,8 +48,18 @@ authRouter.post('/login', async (req: Request, res: Response) => {
   }
 })
 
-authRouter.patch('/update', async (req: Request, res: Response) => {
-  
-})
+authRouter.patch('/update', authMiddleware, async (req: Request, res: Response, next: Function) => {
+  const { email, name } = req.body;
+  if(!email || !name) {
+    throw new BadRequestError('Please provide all values');
+  }
+
+  const userId = req.app.locals.user.userId;
+
+  const user = await User.findOneAndUpdate({_id: userId}, {name: name, email: email}, {new: true});
+  const token = user?.createJWT();
+  res.status(200).json({user, token});
+
+});
 
 export default authRouter;

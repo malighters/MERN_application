@@ -1,5 +1,5 @@
 import { IUser } from "../interfaces/user-interface";
-import { CLEAR_ALERT, DISPLAY_ALERT, REGISTER_USER_BEGIN, REGISTER_USER_SUCCESS, REGISTER_USER_ERROR, LOGIN_USER_BEGIN, LOGIN_USER_SUCCESS, LOGIN_USER_ERROR, TOOGLE_SIDEBAR, LOGOUT_USER } from "./actions"
+import { CLEAR_ALERT, DISPLAY_ALERT, REGISTER_USER_BEGIN, REGISTER_USER_SUCCESS, REGISTER_USER_ERROR, LOGIN_USER_BEGIN, LOGIN_USER_SUCCESS, LOGIN_USER_ERROR, TOOGLE_SIDEBAR, LOGOUT_USER, UPDATE_USER_BEGIN, UPDATE_USER_SUCCESS, UPDATE_USER_ERROR } from "./actions"
 
 interface IState {
   user: IUser | null | undefined,
@@ -21,7 +21,7 @@ const reducer = (state: IState, action: IAction): IState => {
       ...state,
       showAlert: true,
       alertType: 'danger',
-      alertText: 'Please provide all values!',
+      alertText: 'Please provide all values',
     };
   }
   if (action.type === CLEAR_ALERT) {
@@ -77,6 +77,32 @@ const reducer = (state: IState, action: IAction): IState => {
     };
   }
   if (action.type === LOGIN_USER_ERROR) {
+    return {
+      ...state,
+      isLoading: false,
+      showAlert: true,
+      alertType: 'danger',
+      alertText: action.payload?.msg,
+    };
+  }
+  if (action.type === UPDATE_USER_BEGIN) {
+    return {
+      ...state,
+      isLoading: true
+    };
+  }
+  if (action.type === UPDATE_USER_SUCCESS) {
+    return {
+      ...state,
+      isLoading:false,
+      user: action.payload?.user,
+      token: action.payload?.token, 
+      showAlert: true,
+      alertType: 'success',
+      alertText: 'Update successful!',
+    };
+  }
+  if (action.type === UPDATE_USER_ERROR) {
     return {
       ...state,
       isLoading: false,

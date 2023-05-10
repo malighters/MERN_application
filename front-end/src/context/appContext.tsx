@@ -1,6 +1,6 @@
 import axios from "axios";
 import React, {  MouseEventHandler, useReducer } from "react";
-import { CLEAR_ALERT, DISPLAY_ALERT, REGISTER_USER_BEGIN, REGISTER_USER_SUCCESS, REGISTER_USER_ERROR, LOGIN_USER_BEGIN, LOGIN_USER_SUCCESS, LOGIN_USER_ERROR, TOOGLE_SIDEBAR, LOGOUT_USER } from "./actions";
+import { CLEAR_ALERT, DISPLAY_ALERT, REGISTER_USER_BEGIN, REGISTER_USER_SUCCESS, REGISTER_USER_ERROR, LOGIN_USER_BEGIN, LOGIN_USER_SUCCESS, LOGIN_USER_ERROR, TOOGLE_SIDEBAR, LOGOUT_USER, UPDATE_USER_BEGIN, UPDATE_USER_ERROR, UPDATE_USER_SUCCESS } from "./actions";
 import reducer from "./reducer";
 import { IUser } from "../interfaces/user-interface";
 
@@ -10,6 +10,7 @@ type Props = {
 
 type alertFunc =  (() => void) | null
 type regFunc = ((arg: IUser) => void) | null
+type updateFunc = ((arg: {name: string, email: string}) => void) | null
 type buttonFunc = MouseEventHandler | undefined
 
 
@@ -29,6 +30,7 @@ interface IState {
   registerUser: regFunc,
   loginUser: regFunc,
   logoutUser: buttonFunc,
+  updateUser: updateFunc,
   toogleSidebar: buttonFunc,
 }
 
@@ -45,13 +47,42 @@ const initialState: IState = {
   registerUser: null,
   loginUser: null,
   logoutUser: undefined,
+  updateUser: null,
   toogleSidebar: undefined
 }
 
 export const AppContext = React.createContext(initialState);
 
 export const AppProvider = ({children} : Props) => {
-  const [state, dispatch] = useReducer(reducer, initialState); 
+  const [state, dispatch] = useReducer(reducer, initialState);
+
+  axios.defaults.headers['Authorization'] = 'Bearer ' + state.token;
+
+  const authFetch = axios.create();
+
+  authFetch.interceptors.request.use(
+    (config) => {
+      config.headers['Authorization'] = `Bearer ${state.token}`;
+      return config;
+    },
+    (error) => {
+      return Promise.reject(error);
+    }
+  );
+
+  authFetch.interceptors.response.use(
+    (response) => {
+      console.log(response)
+      return response;
+    },
+    (error) => {
+      console.log(error.response);
+      if (error.response.status === 401) {
+        logoutUser();
+      }
+      return Promise.reject(error);
+    }
+  );
 
   const displayAlert = () => {
     dispatch({type: DISPLAY_ALERT});
@@ -63,7 +94,7 @@ export const AppProvider = ({children} : Props) => {
   const clearAlert = () => {
     setTimeout(() => {
       dispatch({type: CLEAR_ALERT});
-    }, 5000)
+    }, 3000)
   }
 
   initialState.clearAlert = clearAlert;
@@ -119,6 +150,26 @@ export const AppProvider = ({children} : Props) => {
 
   initialState.logoutUser = logoutUser;
 
+  const updateUser = async (updatedUser: {email: string, name: string}) => {
+    dispatch({type: UPDATE_USER_BEGIN})
+    try {      
+      const { data } = await axios.patch('auth/update', updatedUser);
+      const { user, token } = data;
+      dispatch({type: UPDATE_USER_SUCCESS, payload:{user, token}});
+      addUserToLocalStorage({user, token});
+    }
+    catch (error) {
+      if(error instanceof axios.AxiosError) {
+        if (error.response?.status !== 401) {
+          dispatch({type: UPDATE_USER_ERROR, payload: {msg: error.response?.data.Error}})
+        }
+     }
+    }
+    clearAlert();
+  }
+
+  initialState.updateUser = updateUser;
+
   const toogleSidebar = () => {
     dispatch({type: TOOGLE_SIDEBAR});
   }
@@ -126,7 +177,7 @@ export const AppProvider = ({children} : Props) => {
   initialState.toogleSidebar = toogleSidebar;
 
   return (
-    <AppContext.Provider value={{...state, displayAlert, clearAlert, registerUser, loginUser, logoutUser, toogleSidebar}}>
+    <AppContext.Provider value={{...state, displayAlert, clearAlert, registerUser, loginUser, logoutUser, toogleSidebar, updateUser}}>
       {children}
     </AppContext.Provider>
   )

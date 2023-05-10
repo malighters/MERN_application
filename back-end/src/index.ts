@@ -8,6 +8,7 @@ import notFoundMiddleware from './middleware/not-found-middleware';
 import authRouter from './routes/auth-router';
 import pigRouter from './routes/pig-router';
 import { MONGO_URI, PORT, NODE_ENV } from './utils/config';
+import authMiddleware from './middleware/auth-middleware';
 
 
 const app = express();
@@ -24,7 +25,7 @@ if(NODE_ENV !== 'production') {
 app.use(cors());
 
 app.use('/auth', authRouter);
-app.use('/pigs', pigRouter);
+app.use('/pigs', authMiddleware, pigRouter);
 
 app.use(notFoundMiddleware);
 app.use(errorHandlerMiddleware);

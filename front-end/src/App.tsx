@@ -1,11 +1,12 @@
 import { BrowserRouter, Routes, Route } from "react-router-dom";
-import axios from "axios";
 import Landing from "./pages/Landing";
 import {AddPig, AllPigs, Profile,SharedLayout, Stats} from "./pages/dashboard/dashboard";
 import Error from "./pages/Error";
 import Register from "./pages/Register";
 import ProtectedRoute from "./pages/ProtectedRoute";
+import axios from "axios";
 function App() {
+  
   axios.defaults.baseURL = `http://localhost:5000`;
   return (
   
