@@ -12,8 +12,16 @@ const userSchema = new mongoose.Schema<IUser, UserModel, IUserMethods>({
     validate: [validator. isEmail, 'Please provide a valid email'],
     unique: true
   }, 
-  password: {type: String, required: [true, 'Please provide your password']},
-  name: {type: String, required: [true, 'Please provide your full name'], minLength: 3, maxLength: 20}, 
+  password: {
+    type: String, 
+    required: [true, 'Please provide your password']
+  },
+  name: {
+    type: String, 
+    required: [true, 'Please provide your full name'],
+    minLength: 3, 
+    maxLength: 20
+  }, 
 });
 
 userSchema.pre('save', async function () {
