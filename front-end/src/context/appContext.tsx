@@ -1,8 +1,9 @@
 import axios from "axios";
 import React, {  MouseEventHandler, useReducer } from "react";
-import { CLEAR_ALERT, DISPLAY_ALERT, REGISTER_USER_BEGIN, REGISTER_USER_SUCCESS, REGISTER_USER_ERROR, LOGIN_USER_BEGIN, LOGIN_USER_SUCCESS, LOGIN_USER_ERROR, TOOGLE_SIDEBAR, LOGOUT_USER, UPDATE_USER_BEGIN, UPDATE_USER_ERROR, UPDATE_USER_SUCCESS, HANDLE_CHANGE, CLEAR_VALUES, CREATE_PIG_BEGIN, CREATE_PIG_SUCCESS } from "./actions";
+import { CLEAR_ALERT, DISPLAY_ALERT, REGISTER_USER_BEGIN, REGISTER_USER_SUCCESS, REGISTER_USER_ERROR, LOGIN_USER_BEGIN, LOGIN_USER_SUCCESS, LOGIN_USER_ERROR, TOOGLE_SIDEBAR, LOGOUT_USER, UPDATE_USER_BEGIN, UPDATE_USER_ERROR, UPDATE_USER_SUCCESS, HANDLE_CHANGE, CLEAR_VALUES, CREATE_PIG_BEGIN, CREATE_PIG_SUCCESS, GET_PIGS_BEGIN, GET_PIGS_SUCCESS, SET_EDIT_PIG, DELETE_PIG_BEGIN, EDIT_PIG_BEGIN, EDIT_PIG_SUCCESS, EDIT_PIG_ERROR } from "./actions";
 import reducer from "./reducer";
 import { IUser } from "../interfaces/user-interface";
+import { IPig } from "../interfaces/pig-interface";
 
 type Props = {
   children: string | JSX.Element | JSX.Element[]
@@ -14,7 +15,8 @@ type updateFunc = ((arg: {name: string, email: string}) => void) | null
 type buttonFunc = MouseEventHandler | undefined
 type handleFunc = ((arg: {name: string, value: string}) => void) | null
 type clearFunc = (() => void) | null
-type addFunc = (() => void) | null
+type pigFunc = (() => void) | null
+type deleteFunc = ((id: string) => void) | null
 
 
 const user = localStorage.getItem('user');
@@ -37,6 +39,10 @@ interface IState {
   pigGenderTypes: string[],
   pigBreed: string,
   pigBreedTypes: string[],
+  pigs: IPig[] | null | undefined,
+  totalPigs: number | null | undefined,
+  numOfPages: number | null | undefined,
+  page: number | null | undefined,
   displayAlert: alertFunc,
   clearAlert: alertFunc,
   registerUser: regFunc,
@@ -45,8 +51,12 @@ interface IState {
   updateUser: updateFunc,
   toogleSidebar: buttonFunc,
   handleChange: handleFunc,
-  changeValues: clearFunc,
-  createPig: addFunc,
+  clearValues: clearFunc,
+  createPig: pigFunc,
+  getPigs: pigFunc,
+  setEditId: deleteFunc,
+  deletePig: deleteFunc,
+  editPig: pigFunc
 }
 
 const initialState: IState = {
@@ -66,6 +76,10 @@ const initialState: IState = {
   pigGenderTypes: ['Male', 'Female'],
   pigBreed: 'Berkshire',
   pigBreedTypes: ['Berkshire', 'Chester White', 'Duroc', 'Hampshire', 'Landrace', 'Poland China', 'Spotted', 'Yorkshire'],
+  pigs: [],
+  totalPigs: 0,
+  numOfPages: 1,
+  page: 1,
   displayAlert: null,
   clearAlert: null,
   registerUser: null,
@@ -74,8 +88,12 @@ const initialState: IState = {
   updateUser: null,
   toogleSidebar: undefined,
   handleChange: null,
-  changeValues: null,
+  clearValues: null,
   createPig: null,
+  getPigs: null,
+  setEditId: null,
+  deletePig: null,
+  editPig: null,
 }
 
 export const AppContext = React.createContext(initialState);
@@ -90,6 +108,7 @@ export const AppProvider = ({children} : Props) => {
   authFetch.interceptors.request.use(
     (config) => {
       config.headers['Authorization'] = `Bearer ${state.token}`;
+      config.baseURL = 'http://localhost:5000';
       return config;
     },
     (error) => {
@@ -99,7 +118,6 @@ export const AppProvider = ({children} : Props) => {
 
   authFetch.interceptors.response.use(
     (response) => {
-      console.log(response)
       return response;
     },
     (error) => {
@@ -209,25 +227,24 @@ export const AppProvider = ({children} : Props) => {
 
   initialState.handleChange = handleChange;
 
-  const changeValues = () => {
+  const clearValues = () => {
     dispatch({type: CLEAR_VALUES})
   }
 
-  initialState.changeValues = changeValues;
+  initialState.clearValues = clearValues;
 
   const createPig = async () => {
     dispatch({type: CREATE_PIG_BEGIN});
     try {
       const { pigTag, pigBirthDate, pigBreed, pigGender, pigNote } = state;
 
-      const {data} = await authFetch.post('/pigs', {
+      await authFetch.post('/pigs', {
         tag: pigTag,
         birth_date: pigBirthDate,
         breed: pigBreed,
         gender: pigGender,
         note: pigNote
       });
-      console.log(data);
       dispatch({type: CREATE_PIG_SUCCESS});
       dispatch({type: CLEAR_VALUES});
     }
@@ -243,8 +260,74 @@ export const AppProvider = ({children} : Props) => {
 
   initialState.createPig = createPig;
 
+  const getPigs = async () => {
+    dispatch({type: GET_PIGS_BEGIN});
+    try {
+      const { data } = await authFetch.get('/pigs');
+      const { pigs, totalPigs, numOfPages} = data;
+      dispatch({
+        type: GET_PIGS_SUCCESS, 
+        payload: {
+          pigs, totalPigs, numOfPages
+        }
+      })
+    }
+    catch (error: unknown) {
+      logoutUser();
+    }
+    clearAlert();
+  }
+
+  initialState.getPigs = getPigs; 
+  
+  const setEditId = (id: string) => {
+    dispatch({type: SET_EDIT_PIG, payload: { id }})    
+  }
+
+  initialState.setEditId = setEditId;
+
+  const editPig = async () => {
+    dispatch({type: EDIT_PIG_BEGIN});
+    try {
+      const { pigTag, pigBirthDate, pigBreed, pigGender, pigNote } = state;
+
+      await authFetch.patch(`/pigs/${state.editPigId}`, {
+        tag: pigTag,
+        birth_date: pigBirthDate,
+        breed: pigBreed,
+        gender: pigGender,
+        note: pigNote
+      });
+      dispatch({type: EDIT_PIG_SUCCESS});
+      dispatch({type: CLEAR_VALUES});
+    }
+    catch (error) {
+      if(error instanceof axios.AxiosError) {
+        if (error.response?.status !== 401) {
+          dispatch({type: EDIT_PIG_ERROR, payload: {msg: error.response?.data.Error}})
+        }
+     }
+    }
+    clearAlert();
+  }
+
+  initialState.editPig = editPig;
+
+  const deletePig = async (id: string) => {
+    dispatch({type: DELETE_PIG_BEGIN});
+    try {
+      await authFetch.delete(`/pigs/${id}`);
+      getPigs();
+    }
+    catch(error) {
+      logoutUser(); 
+    }
+  }
+
+  initialState.deletePig = deletePig;
+
   return (
-    <AppContext.Provider value={{...state, displayAlert, clearAlert, registerUser, loginUser, logoutUser, toogleSidebar, updateUser, handleChange, changeValues, createPig}}>
+    <AppContext.Provider value={{ ...state, displayAlert, clearAlert, registerUser, loginUser, logoutUser, toogleSidebar, updateUser, handleChange, clearValues, createPig, getPigs, setEditId, deletePig, editPig }}>
       {children}
     </AppContext.Provider>
   )

@@ -9,7 +9,7 @@ const AddPig = () => {
 
   const currentDate = new Date();
 
-  const { isLoading, isEditing, showAlert, displayAlert, pigTag, pigBirthDate, pigNote, pigBreed, pigBreedTypes, pigGender, pigGenderTypes, handleChange, changeValues, createPig } = useContext(AppContext)
+  const { isLoading, isEditing, showAlert, displayAlert, pigTag, pigBirthDate, pigNote, pigBreed, pigBreedTypes, pigGender, pigGenderTypes, handleChange, clearValues: changeValues, createPig, editPig } = useContext(AppContext)
 
   const handlePigInput = (e: FormEvent) => {
     const data = e.target as HTMLInputElement;
@@ -27,6 +27,7 @@ const AddPig = () => {
     }
 
     if (isEditing) {
+      editPig?.();
       return;
     }
 

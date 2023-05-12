@@ -1,5 +1,7 @@
 import { IUser } from "../interfaces/user-interface";
-import { CLEAR_ALERT, DISPLAY_ALERT, REGISTER_USER_BEGIN, REGISTER_USER_SUCCESS, REGISTER_USER_ERROR, LOGIN_USER_BEGIN, LOGIN_USER_SUCCESS, LOGIN_USER_ERROR, TOOGLE_SIDEBAR, LOGOUT_USER, UPDATE_USER_BEGIN, UPDATE_USER_SUCCESS, UPDATE_USER_ERROR, HANDLE_CHANGE, CLEAR_VALUES, CREATE_PIG_BEGIN, CREATE_PIG_SUCCESS, CREATE_PIG_ERROR } from "./actions"
+import { IPig } from "../interfaces/pig-interface";
+import { CLEAR_ALERT, DISPLAY_ALERT, REGISTER_USER_BEGIN, REGISTER_USER_SUCCESS, REGISTER_USER_ERROR, LOGIN_USER_BEGIN, LOGIN_USER_SUCCESS, LOGIN_USER_ERROR, TOOGLE_SIDEBAR, LOGOUT_USER, UPDATE_USER_BEGIN, UPDATE_USER_SUCCESS, UPDATE_USER_ERROR, HANDLE_CHANGE, CLEAR_VALUES, CREATE_PIG_BEGIN, CREATE_PIG_SUCCESS, CREATE_PIG_ERROR, GET_PIGS_BEGIN, GET_PIGS_SUCCESS, SET_EDIT_PIG, DELETE_PIG_BEGIN, DELETE_PIG_ERROR, EDIT_PIG_BEGIN, EDIT_PIG_SUCCESS, EDIT_PIG_ERROR } from "./actions"
+import moment from "moment";
 
 interface IState {
   user: IUser | null | undefined,
@@ -18,12 +20,26 @@ interface IState {
   pigGenderTypes: string[],
   pigBreed: string,
   pigBreedTypes: string[],
+  pigs: IPig[] | null | undefined,
+  totalPigs: number | null | undefined,
+  numOfPages: number | null | undefined,
+  page: number | null | undefined,
 }
 
 type IAction = { type: string, payload?: null} | 
-  {type: string, payload: { user: IUser, token: string, msg?: null, name?: null, value?: null }} |
-  {type: string, payload: { msg: string, user?: null, token?: null, name?: null, value?: null }} |
-  {type: string, payload: { name: string, value: string, user?: null, token?: null, msg?: null }}
+  { type: string, payload: { 
+    user?: IUser, 
+    token?: string, 
+    msg?: string, 
+    name?: string, 
+    value?: string, 
+    pigs?: IPig[], 
+    totalPigs?: number, 
+    numOfPages?: number,
+    id?: string
+  }};
+ 
+  
 
 const reducer = (state: IState, action: IAction): IState => {
   if (action.type === DISPLAY_ALERT) {
@@ -162,6 +178,78 @@ const reducer = (state: IState, action: IAction): IState => {
     }
   }
   if (action.type === CREATE_PIG_ERROR) {
+    return {
+      ...state,
+      isLoading: false,
+      showAlert: true,
+      alertType: 'danger',
+      alertText: action.payload?.msg
+    }
+  }
+  if (action.type === GET_PIGS_BEGIN) {
+    return {
+      ...state,
+      isLoading: true,
+      showAlert: false
+    }
+  }
+  if (action.type === GET_PIGS_SUCCESS) {
+    return {
+      ...state,
+      isLoading: false,
+      pigs: action.payload?.pigs,
+      numOfPages: action.payload?.numOfPages,
+      totalPigs: action.payload?.totalPigs,
+    }
+  }
+  if (action.type === SET_EDIT_PIG) {
+    const pig = state.pigs?.find((pig) => pig.id === action.payload?.id);
+    if (pig === undefined) return {...state};
+    const { id, tag, gender, breed, birth_date, note }: IPig = pig;
+    const date = moment(birth_date);
+    const pigBirthDate = date.format('YYYY-MM-DD');
+    return {
+      ...state,
+      isEditing: true,
+      editPigId: id,
+      pigTag: tag,
+      pigGender: gender,
+      pigBreed: breed,
+      pigBirthDate,
+      pigNote: note || '',
+    }
+  }
+  if (action.type === DELETE_PIG_BEGIN) {
+    return {
+      ...state,
+      isLoading: true
+    }
+  }
+  if (action.type === DELETE_PIG_ERROR) {
+    return {
+      ...state,
+      isLoading: false,
+      showAlert: true,
+      alertType: 'danger',
+      alertText: action.payload?.msg
+    }
+  }
+  if (action.type === EDIT_PIG_BEGIN) {
+    return {
+      ...state,
+      isLoading: true,
+    }
+  }
+  if (action.type === EDIT_PIG_SUCCESS) {
+    return {
+      ...state,
+      isLoading: false,
+      showAlert: true,
+      alertType: 'success',
+      alertText: 'Pig data updated!'
+    }
+  }
+  if (action.type === EDIT_PIG_ERROR) {
     return {
       ...state,
       isLoading: false,

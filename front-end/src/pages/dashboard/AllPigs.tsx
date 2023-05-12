@@ -1,6 +1,14 @@
+import Wrapper from "../../assets/wrappers/DashboardPage"
+import PigContainer from "../../components/PigContainer"
+import SearchContainer from "../../components/SearchContainer"
+
 const AllPigs = () => {
+  
   return (
-    <div>AllPigs</div>
+    <>
+      <SearchContainer />
+      <PigContainer />
+    </>
   )
 }
 export default AllPigs

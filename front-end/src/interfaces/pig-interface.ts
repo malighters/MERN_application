@@ -1,4 +1,5 @@
 export interface IPig {
+  id: string,
   tag: string;
   gender: string;
   breed: string;
