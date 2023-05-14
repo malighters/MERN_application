@@ -1,6 +1,6 @@
 import { IUser } from "../interfaces/user-interface";
 import { IPig } from "../interfaces/pig-interface";
-import { CLEAR_ALERT, DISPLAY_ALERT, REGISTER_USER_BEGIN, REGISTER_USER_SUCCESS, REGISTER_USER_ERROR, LOGIN_USER_BEGIN, LOGIN_USER_SUCCESS, LOGIN_USER_ERROR, TOOGLE_SIDEBAR, LOGOUT_USER, UPDATE_USER_BEGIN, UPDATE_USER_SUCCESS, UPDATE_USER_ERROR, HANDLE_CHANGE, CLEAR_VALUES, CREATE_PIG_BEGIN, CREATE_PIG_SUCCESS, CREATE_PIG_ERROR, GET_PIGS_BEGIN, GET_PIGS_SUCCESS, SET_EDIT_PIG, DELETE_PIG_BEGIN, DELETE_PIG_ERROR, EDIT_PIG_BEGIN, EDIT_PIG_SUCCESS, EDIT_PIG_ERROR } from "./actions"
+import { CLEAR_ALERT, DISPLAY_ALERT, REGISTER_USER_BEGIN, REGISTER_USER_SUCCESS, REGISTER_USER_ERROR, LOGIN_USER_BEGIN, LOGIN_USER_SUCCESS, LOGIN_USER_ERROR, TOOGLE_SIDEBAR, LOGOUT_USER, UPDATE_USER_BEGIN, UPDATE_USER_SUCCESS, UPDATE_USER_ERROR, HANDLE_CHANGE, CLEAR_VALUES, CREATE_PIG_BEGIN, CREATE_PIG_SUCCESS, CREATE_PIG_ERROR, GET_PIGS_BEGIN, GET_PIGS_SUCCESS, SET_EDIT_PIG, DELETE_PIG_BEGIN, DELETE_PIG_ERROR, EDIT_PIG_BEGIN, EDIT_PIG_SUCCESS, EDIT_PIG_ERROR, SHOW_STATS_BEGIN, SHOW_STATS_SUCCESS, CLEAR_FILTERS, CHANGE_PAGE } from "./actions"
 import moment from "moment";
 
 interface IState {
@@ -23,7 +23,14 @@ interface IState {
   pigs: IPig[] | null | undefined,
   totalPigs: number | null | undefined,
   numOfPages: number | null | undefined,
-  page: number | null | undefined,
+  page: number | null,
+  stats: any | null,
+  search: string,
+  searchBreed: string;
+  searchGender: string,
+  searchSort: string,
+  searchSortOptions: string[],
+  isUpdated: boolean,
 }
 
 type IAction = { type: string, payload?: null} | 
@@ -36,7 +43,9 @@ type IAction = { type: string, payload?: null} |
     pigs?: IPig[], 
     totalPigs?: number, 
     numOfPages?: number,
-    id?: string
+    id?: string,
+    stats?: any,
+    page?: number
   }};
  
   
@@ -141,14 +150,22 @@ const reducer = (state: IState, action: IAction): IState => {
     return {
       ...state,
       user: null,
-      token: null
+      token: null,
+      isLoading: false,
     }
   }
   if (action.type === TOOGLE_SIDEBAR) {
     return {...state, showSidebar: !state.showSidebar}
   }
   if (action.type === HANDLE_CHANGE) {
-    return {...state, [action.payload?.name]: action.payload?.value}
+    const name: any = [action.payload?.name];
+    return {
+      ...state, 
+      // eslint-disable-next-line no-use-before-define
+      [name]: action.payload?.value,
+      isUpdated: false,
+      page: 1
+    }
   }
   if (action.type === CLEAR_VALUES) {
     return {
@@ -190,7 +207,8 @@ const reducer = (state: IState, action: IAction): IState => {
     return {
       ...state,
       isLoading: true,
-      showAlert: false
+      showAlert: false,
+      isUpdated: true,
     }
   }
   if (action.type === GET_PIGS_SUCCESS) {
@@ -256,6 +274,38 @@ const reducer = (state: IState, action: IAction): IState => {
       showAlert: true,
       alertType: 'danger',
       alertText: action.payload?.msg
+    }
+  }
+  if (action.type === SHOW_STATS_BEGIN) {
+    return {
+      ...state,
+      isLoading: true,
+      showAlert: false
+    }
+  }
+  if (action.type === SHOW_STATS_SUCCESS) {
+    return {
+      ...state,
+      isLoading: false,
+      stats: action.payload?.stats,
+    }
+  }
+
+  if (action.type === CLEAR_FILTERS) {
+    return {
+      ...state,
+      search: '',
+      searchBreed: 'all',
+      searchGender: 'all',
+      searchSort: 'latest',
+      isUpdated: false,
+    }
+  }
+  if (action.type === CHANGE_PAGE) {
+    return {
+      ...state,
+      page: action.payload?.page || 1,
+      isUpdated: false,
     }
   }
   throw new Error(`no such action: ${action.type}`);

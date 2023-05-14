@@ -1,6 +1,6 @@
 import axios from "axios";
 import React, {  MouseEventHandler, useReducer } from "react";
-import { CLEAR_ALERT, DISPLAY_ALERT, REGISTER_USER_BEGIN, REGISTER_USER_SUCCESS, REGISTER_USER_ERROR, LOGIN_USER_BEGIN, LOGIN_USER_SUCCESS, LOGIN_USER_ERROR, TOOGLE_SIDEBAR, LOGOUT_USER, UPDATE_USER_BEGIN, UPDATE_USER_ERROR, UPDATE_USER_SUCCESS, HANDLE_CHANGE, CLEAR_VALUES, CREATE_PIG_BEGIN, CREATE_PIG_SUCCESS, GET_PIGS_BEGIN, GET_PIGS_SUCCESS, SET_EDIT_PIG, DELETE_PIG_BEGIN, EDIT_PIG_BEGIN, EDIT_PIG_SUCCESS, EDIT_PIG_ERROR } from "./actions";
+import { CLEAR_ALERT, DISPLAY_ALERT, REGISTER_USER_BEGIN, REGISTER_USER_SUCCESS, REGISTER_USER_ERROR, LOGIN_USER_BEGIN, LOGIN_USER_SUCCESS, LOGIN_USER_ERROR, TOOGLE_SIDEBAR, LOGOUT_USER, UPDATE_USER_BEGIN, UPDATE_USER_ERROR, UPDATE_USER_SUCCESS, HANDLE_CHANGE, CLEAR_VALUES, CREATE_PIG_BEGIN, CREATE_PIG_SUCCESS, GET_PIGS_BEGIN, GET_PIGS_SUCCESS, SET_EDIT_PIG, DELETE_PIG_BEGIN, EDIT_PIG_BEGIN, EDIT_PIG_SUCCESS, EDIT_PIG_ERROR, SHOW_STATS_BEGIN, SHOW_STATS_SUCCESS, CLEAR_FILTERS, CHANGE_PAGE } from "./actions";
 import reducer from "./reducer";
 import { IUser } from "../interfaces/user-interface";
 import { IPig } from "../interfaces/pig-interface";
@@ -17,6 +17,7 @@ type handleFunc = ((arg: {name: string, value: string}) => void) | null
 type clearFunc = (() => void) | null
 type pigFunc = (() => void) | null
 type deleteFunc = ((id: string) => void) | null
+type changeFunc = ((arg: number) => void) | null
 
 
 const user = localStorage.getItem('user');
@@ -42,7 +43,14 @@ interface IState {
   pigs: IPig[] | null | undefined,
   totalPigs: number | null | undefined,
   numOfPages: number | null | undefined,
-  page: number | null | undefined,
+  page: number | null,
+  stats: any | null,
+  search: string,
+  searchBreed: string;
+  searchGender: string,
+  searchSort: string,
+  searchSortOptions: string[],
+  isUpdated: boolean,
   displayAlert: alertFunc,
   clearAlert: alertFunc,
   registerUser: regFunc,
@@ -56,7 +64,10 @@ interface IState {
   getPigs: pigFunc,
   setEditId: deleteFunc,
   deletePig: deleteFunc,
-  editPig: pigFunc
+  editPig: pigFunc, 
+  showStats: pigFunc,
+  clearFilters: clearFunc,
+  changePage: changeFunc
 }
 
 const initialState: IState = {
@@ -80,6 +91,13 @@ const initialState: IState = {
   totalPigs: 0,
   numOfPages: 1,
   page: 1,
+  stats: {},
+  search: '',
+  searchBreed: 'all',
+  searchGender: 'all',
+  searchSort: 'latest',
+  searchSortOptions: ['latest', 'oldest', 'a-z', 'z-a'],
+  isUpdated: false,
   displayAlert: null,
   clearAlert: null,
   registerUser: null,
@@ -94,6 +112,9 @@ const initialState: IState = {
   setEditId: null,
   deletePig: null,
   editPig: null,
+  showStats: null,
+  clearFilters: null,
+  changePage: null
 }
 
 export const AppContext = React.createContext(initialState);
@@ -121,7 +142,6 @@ export const AppProvider = ({children} : Props) => {
       return response;
     },
     (error) => {
-      console.log(error.response);
       if (error.response.status === 401) {
         logoutUser();
       }
@@ -261,10 +281,17 @@ export const AppProvider = ({children} : Props) => {
   initialState.createPig = createPig;
 
   const getPigs = async () => {
+    const { search, searchBreed, searchGender, searchSort, page } = state;
+    let request = `/pigs?page=${page}&breed=${searchBreed}&gender=${searchGender}&sort=${searchSort}`;
+
+    if(search) {
+      request += `&search=${search}`;
+    }
+
     dispatch({type: GET_PIGS_BEGIN});
-    try {
-      const { data } = await authFetch.get('/pigs');
-      const { pigs, totalPigs, numOfPages} = data;
+    try {      
+      const { data } = await authFetch.get(request);
+      const { pigs, totalPigs, numOfPages } = data;
       dispatch({
         type: GET_PIGS_SUCCESS, 
         payload: {
@@ -326,8 +353,33 @@ export const AppProvider = ({children} : Props) => {
 
   initialState.deletePig = deletePig;
 
+  const showStats = async () => {
+    dispatch({type: SHOW_STATS_BEGIN});
+    try {
+      const { data } = await authFetch.get('/pigs/stats');
+      dispatch({ type: SHOW_STATS_SUCCESS, payload: { stats: data.modifiedStats } });
+    }
+    catch (error) {
+      logoutUser();
+    }
+  }
+
+  initialState.showStats = showStats;
+
+  const clearFilters = () => {
+    dispatch({ type: CLEAR_FILTERS });
+  }
+
+  initialState.clearFilters = clearFilters;
+
+  const changePage = (page: number) => {
+    dispatch({ type: CHANGE_PAGE, payload: { page } })
+  }
+
+  initialState.changePage = changePage;
+
   return (
-    <AppContext.Provider value={{ ...state, displayAlert, clearAlert, registerUser, loginUser, logoutUser, toogleSidebar, updateUser, handleChange, clearValues, createPig, getPigs, setEditId, deletePig, editPig }}>
+    <AppContext.Provider value={{ ...state, displayAlert, clearAlert, registerUser, loginUser, logoutUser, toogleSidebar, updateUser, handleChange, clearValues, createPig, getPigs, setEditId, deletePig, editPig, showStats, clearFilters, changePage }}>
       {children}
     </AppContext.Provider>
   )

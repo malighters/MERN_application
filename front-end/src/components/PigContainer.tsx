@@ -1,20 +1,18 @@
-import { useContext, useEffect, useState } from "react"
+import { useContext, useEffect } from "react"
 import { AppContext } from "../context/appContext"
 import Loading from "./Loading";
 import Wrapper from "../assets/wrappers/PigContainer";
 import Pig from "./Pig";
+import PageBtnContainer from "./PageBtnContainer";
 
 const PigContainer = () => {
-  const { getPigs, pigs, numOfPages, page, totalPigs, isLoading } = useContext(AppContext);
-
-  const [ dataLoading, setDataLoading ] = useState(false); 
+  const { getPigs, pigs, numOfPages, totalPigs, isLoading, search, searchBreed, searchGender, searchSort, isUpdated } = useContext(AppContext);
   
   useEffect(() => {
-    if (!dataLoading) {
+    if (!isUpdated) {
       getPigs?.();
-      setDataLoading(true);
     }
-  }, [getPigs])
+  }, [getPigs, search, searchBreed, searchGender, searchSort, isUpdated])
 
   if (isLoading) {
     return <Loading center />
@@ -36,6 +34,7 @@ const PigContainer = () => {
           return <Pig key={pig.id} {...pig} />
         })}
       </div>
+      { numOfPages! > 1 && <PageBtnContainer /> }
     </Wrapper>
   )
 }
